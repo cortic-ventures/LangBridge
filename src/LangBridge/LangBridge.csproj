@@ -1,0 +1,46 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <LangVersion>default</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <!-- Disable OllamaSharp source generators temporarily -->
+    <RunAnalyzersDuringBuild>false</RunAnalyzersDuringBuild>
+    
+    <!-- Package metadata -->
+    <PackageId>LangBridge</PackageId>
+    <Version>0.0.1-alpha</Version>
+    <Authors>Your Name</Authors>
+    <Description>A C# library that simplifies structured LLM queries from C# code</Description>
+    <PackageTags>llm;ai;semantic-kernel;openai;anthropic</PackageTags>
+    <RepositoryUrl>https://github.com/yourusername/LangBridge</RepositoryUrl>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
+      <_Parameter1>LangBridge.Tests</_Parameter1>
+    </AssemblyAttribute>
+    <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
+      <_Parameter1>LangBridge.Examples.Console</_Parameter1>
+    </AssemblyAttribute>
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Semantic Kernel -->
+    <PackageReference Include="Microsoft.Net.Compilers.Toolset" Version="4.12.0">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="Microsoft.SemanticKernel" Version="1.55.0" />
+    <PackageReference Include="Microsoft.SemanticKernel.Connectors.Ollama" Version="1.53.1-alpha" />
+    <PackageReference Include="Microsoft.SemanticKernel.Connectors.OpenAI" Version="1.55.0" />
+    
+    <!-- Only add packages that we explicitly need and that SK doesn't bring in -->
+    <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="9.0.0" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+    <PackageReference Include="CSharpFunctionalExtensions" Version="2.40.3" />
+  </ItemGroup>
+
+</Project>
