@@ -28,24 +28,12 @@ dotnet add package LangBridge
 
 ```csharp
 using LangBridge.ContextualBridging;
+using LangBridge.Extensions;
 using CSharpFunctionalExtensions;
+using Microsoft.Extensions.Configuration;
 
-// Configure services
-services.AddLangBridge(options =>
-{
-    options.ReasoningModel = new ModelConfig
-    {
-        Provider = AiProvider.OpenAI,
-        ModelId = "gpt-4o",
-        ApiKey = Environment.GetEnvironmentVariable("OPENAI_API_KEY")!
-    };
-    options.ToolingModel = new ModelConfig
-    {
-        Provider = AiProvider.OpenAI,
-        ModelId = "gpt-4o-mini",
-        ApiKey = Environment.GetEnvironmentVariable("OPENAI_API_KEY")!
-    };
-});
+// Configure services with IConfiguration
+services.AddLangBridge(configuration);
 
 // Extract simple types
 var bridge = serviceProvider.GetRequiredService<ITextContextualBridge>();
@@ -104,33 +92,68 @@ LangBridge uses a clean architecture with clear separation between public API an
 ```json
 {
   "LangBridge": {
-    "ReasoningModel": {
-      "Provider": "OpenAI",
-      "ModelId": "gpt-4o",
-      "ApiKey": "${OPENAI_API_KEY}"
-    },
-    "ToolingModel": {
-      "Provider": "OpenAI",  
-      "ModelId": "gpt-4o-mini",
-      "ApiKey": "${OPENAI_API_KEY}"
-    }
+    "Models": [
+      {
+        "Purpose": "Reasoning",
+        "Provider": "OpenAI",
+        "ModelName": "gpt-4o",
+        "ApiKey": "your-openai-api-key",
+        "Endpoint": "https://api.openai.com/v1"
+      },
+      {
+        "Purpose": "Tooling",
+        "Provider": "OpenAI",
+        "ModelName": "gpt-4o-mini",
+        "ApiKey": "your-openai-api-key",
+        "Endpoint": "https://api.openai.com/v1"
+      }
+    ]
   }
 }
 ```
 
-### Via Code
+### Additional Provider Examples
 
-```csharp
-services.AddLangBridge(options =>
+#### Ollama (Local)
+```json
 {
-    options.ReasoningModel = new ModelConfig
-    {
-        Provider = AiProvider.Anthropic,
-        ModelId = "claude-3-5-sonnet-20241022",
-        ApiKey = apiKey
-    };
-    // Configure other options...
-});
+  "LangBridge": {
+    "Models": [
+      {
+        "Purpose": "Reasoning",
+        "Provider": "Ollama",
+        "ModelName": "llama3.2:3b",
+        "ApiKey": "test",
+        "Endpoint": "http://localhost:11434"
+      },
+      {
+        "Purpose": "Tooling",
+        "Provider": "Ollama",
+        "ModelName": "llama3.2:3b",
+        "ApiKey": "test",
+        "Endpoint": "http://localhost:11434"
+      }
+    ]
+  }
+}
+```
+
+#### Azure OpenAI
+```json
+{
+  "LangBridge": {
+    "Models": [
+      {
+        "Purpose": "Reasoning",
+        "Provider": "AzureOpenAI",
+        "ModelName": "gpt-4o",
+        "ApiKey": "your-azure-api-key",
+        "Endpoint": "https://your-resource.openai.azure.com"
+      }
+    ]
+  }
+}
+```
 ```
 
 ## Advanced Features
@@ -167,45 +190,42 @@ public class Node
 }
 ```
 
+## Current Status
+
+### v0.0.1 (Pre-Alpha)
+- ✅ Core extraction API with `Result<T>` pattern
+- ✅ Support for simple and complex types  
+- ✅ Deep property extraction with nested objects and collections
+- ✅ Multi-provider LLM support (OpenAI, Ollama, Azure OpenAI, Groq, OpenRouter)
+- ✅ Comprehensive error handling and atomic operations
+- ✅ TypeSystem with advanced reflection utilities
+- ✅ Integration testing framework with high-confidence test scenarios
+- ✅ Circular reference detection and prevention
+
 ## Roadmap
 
-### v0.1.0 (Current Release)
-- ✅ Core extraction API with `Result<T>` pattern
-- ✅ Support for simple and complex types
-- ✅ Deep property extraction
-- ✅ Multi-provider LLM support
-- ✅ Comprehensive error handling
+### v0.1.0 (Next Release)
+- [ ] **Test Project Cleanup**: Refactor and expand integration testing framework
+  - Progressive complexity tests for graduated difficulty levels
+  - Resilience and error handling tests for edge cases and failure modes
+  - Multi-model comparison tests for cross-model performance analysis
+  - Test infrastructure improvements and code cleanup
+- [ ] **Package Publication**: Publish to NuGet with stable API
+- [ ] **Documentation**: Complete API documentation and usage guides
+- [ ] **Performance Benchmarks**: Published performance characteristics
+- [ ] **Production Examples**: Real-world usage examples and best practices
 
-### v0.2.0 (Next Release)
+### v0.2.0 (Future)
 - [ ] **Partial Extraction**: Extract specific properties from complex types
-  ```csharp
-  // Extract only what you need
-  var name = await bridge.TryPropertyExtractionAsync<Person, string>(
-      text, 
-      p => p.Name, 
-      "Extract person's name");
-  ```
-- [ ] **Batch Processing**: Process multiple extractions efficiently
-- [ ] **Extraction Templates**: Reusable extraction patterns
-- [ ] **Performance Optimizations**: Caching and parallel processing
-
-### v0.3.0 (Future)
+- [ ] **Batch Processing**: Process multiple extractions efficiently  
 - [ ] **Debugging Observer Pattern**: Subscribe to extraction events for debugging
-  ```csharp
-  eventBus.Subscribe<ExtractionCompletedEvent>(e => 
-  {
-      _logger.LogDebug("Extraction took {Duration}ms", e.Duration.TotalMilliseconds);
-  });
-  ```
-- [ ] **Extraction Hints**: Guide LLM with additional context
-- [ ] **Custom Type Handlers**: Register custom extraction logic for specific types
-- [ ] **Streaming Support**: Process large documents incrementally
+- [ ] **Performance Optimizations**: Caching and parallel processing
 
 ### v1.0.0 (Stable Release)
 - [ ] **Stable API**: Backward compatibility guarantee
 - [ ] **Production Hardening**: Battle-tested in real applications
-- [ ] **Comprehensive Documentation**: Full API docs and best practices
-- [ ] **Performance Benchmarks**: Published performance characteristics
+- [ ] **Advanced Features**: Custom type handlers, streaming support, extraction hints
+- [ ] **Enterprise Features**: Advanced error handling, monitoring, and diagnostics
 
 ## Contributing
 

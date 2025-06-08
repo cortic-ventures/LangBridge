@@ -77,4 +77,6 @@ dlldata.c
 .env
 .env.local
 appsettings.Development.json
-EOF < /dev/null
+
+# Project task documentation (internal development)
+TASKS/
