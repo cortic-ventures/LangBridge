@@ -154,7 +154,6 @@ LangBridge uses a clean architecture with clear separation between public API an
   }
 }
 ```
-```
 
 ## Advanced Features
 
