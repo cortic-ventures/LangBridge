@@ -8,14 +8,25 @@
     <!-- Disable OllamaSharp source generators temporarily -->
     <RunAnalyzersDuringBuild>false</RunAnalyzersDuringBuild>
     
-    <!-- Package metadata -->
+    <!-- NuGet Package metadata -->
     <PackageId>LangBridge</PackageId>
-    <Version>0.0.1-alpha</Version>
-    <Authors>Your Name</Authors>
-    <Description>A C# library that simplifies structured LLM queries from C# code</Description>
-    <PackageTags>llm;ai;semantic-kernel;openai;anthropic</PackageTags>
-    <RepositoryUrl>https://github.com/yourusername/LangBridge</RepositoryUrl>
+    <Version>0.1.0-alpha</Version>
+    <Authors>Cortic Ventures</Authors>
+    <Company>Cortic Ventures</Company>
+    <Product>LangBridge</Product>
+    <Description>A C# library for extracting structured data from unstructured text using LLMs. Provides atomic operations with Result&lt;T&gt; pattern, multi-provider support (OpenAI, Ollama, Azure), and type-safe extraction APIs.</Description>
+    <Summary>Extract structured data from unstructured text using LLMs with type safety and atomic operations.</Summary>
+    <PackageTags>llm;ai;semantic-kernel;openai;azure;ollama;data-extraction;nlp;text-processing</PackageTags>
+    <RepositoryUrl>https://github.com/cortic-ventures/LangBridge</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/cortic-ventures/LangBridge</PackageProjectUrl>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageReleaseNotes>Initial release with core extraction functionality, multi-provider LLM support, and comprehensive type system.</PackageReleaseNotes>
+    <Copyright>Copyright © 2025 Cortic Ventures</Copyright>
+    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
   </PropertyGroup>
 
   <ItemGroup>
@@ -28,15 +39,18 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Include="../../README.md" Pack="true" PackagePath="\" />
+  </ItemGroup>
+
+  <ItemGroup>
     <!-- Semantic Kernel -->
-    <PackageReference Include="Microsoft.CodeAnalysis.Compilers" Version="4.14.0" />
     <PackageReference Include="Microsoft.Net.Compilers.Toolset" Version="4.12.0">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="Microsoft.SemanticKernel" Version="1.55.0" />
-    <PackageReference Include="Microsoft.SemanticKernel.Connectors.Ollama" Version="1.53.1-alpha" />
-    <PackageReference Include="Microsoft.SemanticKernel.Connectors.OpenAI" Version="1.55.0" />
+    <PackageReference Include="Microsoft.SemanticKernel" Version="1.56.0" />
+    <PackageReference Include="Microsoft.SemanticKernel.Connectors.Ollama" Version="1.56.0-alpha" />
+    <PackageReference Include="Microsoft.SemanticKernel.Connectors.OpenAI" Version="1.56.0" />
     
     <!-- Only add packages that we explicitly need and that SK doesn't bring in -->
     <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="9.0.0" />
