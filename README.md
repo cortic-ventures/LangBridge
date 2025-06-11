@@ -1,6 +1,6 @@
 # LangBridge 🌉
 
-> **Status:** pre-alpha (v0.0.1)
+> **Status:** alpha (v0.1.0)
 
 LangBridge is a C# library for extracting structured data from unstructured text using LLMs. 
 
@@ -368,11 +368,21 @@ public class Node
 
 ## Roadmap
 
-### v0.1.0 (Next Release)
-- [ ] NuGet package publication with stable API
+### v0.1.0 (Current - Ready for Release)
+- ✅ Core `ExtractAsync<T>()` API with configurable extraction modes
+- ✅ Support for simple and complex types with deep property extraction
+- ✅ Atomic operations using `Result<T>` pattern with detailed error reporting
+- ✅ Multi-provider LLM support (OpenAI, Ollama, Azure OpenAI, Groq, OpenRouter)
+- ✅ TypeSystem with advanced reflection utilities and circular reference detection
+- ✅ Comprehensive testing framework (185 tests including complex showcase scenarios)
+- ✅ Production-ready architecture with clean separation of concerns
+- [ ] NuGet package publication
+
+### v0.2.0 (Next Release)
 - [ ] Complete API documentation and production examples
 - [ ] Additional extraction modes (BestEffort, RequiredOnly)
 - [ ] Keyed services support for multiple bridge configurations
+- [ ] Debugging observer pattern for development workflows
 
 ### v1.0.0 (Production Ready)
 - [ ] Stable API with backward compatibility guarantee
