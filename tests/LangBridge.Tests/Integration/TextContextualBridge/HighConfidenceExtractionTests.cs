@@ -1,11 +1,8 @@
-using CSharpFunctionalExtensions;
 using LangBridge.ContextualBridging;
 using LangBridge.Extensions;
 using LangBridge.Tests.Integration.Shared;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using OllamaSharp;
-using Xunit;
 using Xunit.Abstractions;
 
 namespace LangBridge.Tests.Integration.TextContextualBridge;
@@ -22,6 +19,7 @@ public class HighConfidenceExtractionTests : IDisposable
 
     public HighConfidenceExtractionTests(ITestOutputHelper output)
     {
+        TestConfigurationHelper.SkipIfAiModelsNotConfigured(nameof(HighConfidenceExtractionTests));
         _output = output;
         _testConfiguration = new TestConfiguration();
         
@@ -48,10 +46,6 @@ public class HighConfidenceExtractionTests : IDisposable
 
     private bool ShouldSkipAiTests()
     {
-        // DEBUGGING MODE: Set this to true to enable AI tests without configuration
-        //const bool debugMode = false;
-        //if (debugMode) 
-            return false;
         
 #pragma warning disable CS0162 // Unreachable code detected
         var runAiTests = _testConfiguration.RunAiDependentTests;
@@ -82,9 +76,10 @@ public class HighConfidenceExtractionTests : IDisposable
         var cancellationToken = TestConfigurationHelper.GetTimeoutToken("HighConfidence");
         
         // Act
-        var result = await bridge.TryFullExtractionAsync<string>(
+        var result = await bridge.ExtractAsync<string>(
             scenario.Input, 
             scenario.Query, 
+            ExtractionMode.AllOrNothing,
             cancellationToken);
         
         // Assert
@@ -111,9 +106,10 @@ public class HighConfidenceExtractionTests : IDisposable
         var cancellationToken = TestConfigurationHelper.GetTimeoutToken("HighConfidence");
         
         // Act
-        var result = await bridge.TryFullExtractionAsync<int>(
+        var result = await bridge.ExtractAsync<int>(
             scenario.Input, 
             scenario.Query, 
+            ExtractionMode.AllOrNothing,
             cancellationToken);
         
         // Assert
@@ -139,9 +135,10 @@ public class HighConfidenceExtractionTests : IDisposable
         var cancellationToken = TestConfigurationHelper.GetTimeoutToken("HighConfidence");
         
         // Act
-        var result = await bridge.TryFullExtractionAsync<bool>(
+        var result = await bridge.ExtractAsync<bool>(
             scenario.Input, 
             scenario.Query, 
+            ExtractionMode.AllOrNothing,
             cancellationToken);
         
         // Assert
@@ -167,9 +164,10 @@ public class HighConfidenceExtractionTests : IDisposable
         var cancellationToken = TestConfigurationHelper.GetTimeoutToken("HighConfidence");
         
         // Act
-        var result = await bridge.TryFullExtractionAsync<decimal>(
+        var result = await bridge.ExtractAsync<decimal>(
             scenario.Input, 
             scenario.Query, 
+            ExtractionMode.AllOrNothing,
             cancellationToken);
         
         // Assert
@@ -195,9 +193,10 @@ public class HighConfidenceExtractionTests : IDisposable
         var cancellationToken = TestConfigurationHelper.GetTimeoutToken("HighConfidence");
         
         // Act
-        var result = await bridge.TryFullExtractionAsync<DateTime>(
+        var result = await bridge.ExtractAsync<DateTime>(
             scenario.Input, 
             scenario.Query, 
+            ExtractionMode.AllOrNothing,
             cancellationToken);
         
         // Assert
@@ -218,7 +217,7 @@ public class HighConfidenceExtractionTests : IDisposable
 
     #region Complex Type Extraction Tests
 
-    [Fact, Trait("Category", "HighConfidence")]
+    [Fact, Trait("Category",  nameof(HighConfidenceExtractionTests))]
     [Trait("RequiresLLM", "true")]
     public async Task ExtractAsync_PersonInfo_ExtractsCorrectly()
     {
@@ -235,9 +234,10 @@ public class HighConfidenceExtractionTests : IDisposable
         // Act
         try
         {
-            var result = await bridge.TryFullExtractionAsync<TestDataSets.Person>(
+            var result = await bridge.ExtractAsync<TestDataSets.Person>(
                 scenario.Input, 
                 scenario.Query, 
+                ExtractionMode.AllOrNothing,
                 cancellationToken);
             
             // Assert
@@ -268,7 +268,7 @@ public class HighConfidenceExtractionTests : IDisposable
         }
     }
 
-    [Fact, Trait("Category", "HighConfidence")]
+    [Fact, Trait("Category",  nameof(HighConfidenceExtractionTests))]
     [Trait("RequiresLLM", "true")]
     public async Task ExtractAsync_ProductInfo_ExtractsCorrectly()
     {
@@ -287,9 +287,10 @@ public class HighConfidenceExtractionTests : IDisposable
         // Act
         try
         {
-            var result = await bridge.TryFullExtractionAsync<TestDataSets.Product>(
+            var result = await bridge.ExtractAsync<TestDataSets.Product>(
                 scenario.Input, 
                 scenario.Query, 
+                ExtractionMode.AllOrNothing,
                 cancellationToken);
             
             // Assert
@@ -320,7 +321,7 @@ public class HighConfidenceExtractionTests : IDisposable
         }
     }
 
-    [Fact, Trait("Category", "HighConfidence")]
+    [Fact, Trait("Category",  nameof(HighConfidenceExtractionTests))]
     [Trait("RequiresLLM", "true")]
     public async Task ExtractAsync_AddressInfo_ExtractsCorrectly()
     {
@@ -333,9 +334,10 @@ public class HighConfidenceExtractionTests : IDisposable
         var cancellationToken = TestConfigurationHelper.GetTimeoutToken("HighConfidence");
         
         // Act
-        var result = await bridge.TryFullExtractionAsync<TestDataSets.Address>(
+        var result = await bridge.ExtractAsync<TestDataSets.Address>(
             scenario.Input, 
             scenario.Query, 
+            ExtractionMode.AllOrNothing,
             cancellationToken);
         
         // Assert
@@ -358,7 +360,7 @@ public class HighConfidenceExtractionTests : IDisposable
 
     #region Multi-Attempt Reliability Tests
 
-    [Fact, Trait("Category", "HighConfidence")]
+    [Fact, Trait("Category",  nameof(HighConfidenceExtractionTests))]
     [Trait("RequiresLLM", "true")]
     public async Task ExtractAsync_SimplePersonName_HighSuccessRate()
     {
@@ -395,7 +397,7 @@ public class HighConfidenceExtractionTests : IDisposable
         }
     }
 
-    [Fact, Trait("Category", "HighConfidence")]
+    [Fact, Trait("Category", nameof(HighConfidenceExtractionTests))]
     [Trait("RequiresLLM", "true")]
     public async Task ExtractAsync_ComplexPersonInfo_HighSuccessRate()
     {
@@ -469,9 +471,10 @@ public class HighConfidenceExtractionTests : IDisposable
         {
             var stopwatch = System.Diagnostics.Stopwatch.StartNew();
             
-            var result = await bridge.TryFullExtractionAsync<object>(
+            var result = await bridge.ExtractAsync<object>(
                 scenario.input, 
                 scenario.query, 
+                ExtractionMode.AllOrNothing,
                 cancellationToken);
             
             stopwatch.Stop();
@@ -482,64 +485,6 @@ public class HighConfidenceExtractionTests : IDisposable
 
     #endregion
 
-    #region Diagnostic Tests
-
-    [Fact, Trait("Category", "Diagnostic")]
-    [Trait("RequiresLLM", "true")]
-    public async Task DiagnosticTest_DirectOllamaConnection()
-    {
-        // Skip if AI models not configured
-        if (ShouldSkipAiTests()) return;
-        
-        _output.WriteLine("=== DIAGNOSTIC TEST: Direct Ollama Connection ===");
-        
-        try
-        {
-            // Test direct HTTP client to Ollama
-            using var httpClient = new HttpClient 
-            { 
-                BaseAddress = new Uri("http://localhost:11434"),
-                Timeout = TimeSpan.FromMinutes(10)
-            };
-            
-            var ollamaClient = new OllamaApiClient(httpClient);
-            
-            _output.WriteLine("Testing simple chat completion...");
-            var request = new OllamaSharp.Models.Chat.ChatRequest
-            {
-                Model = "qwen3:1.7b",
-                Messages = new List<OllamaSharp.Models.Chat.Message>
-                {
-                    new() { Role = "user", Content = "Extract the name from this text: 'Hello, my name is John Smith and I work at Microsoft.'" }
-                },
-                Stream = false
-            };
-
-            var stopwatch = System.Diagnostics.Stopwatch.StartNew();
-            var response = await ollamaClient.ChatAsync(request, CancellationToken.None).StreamToEndAsync();
-            stopwatch.Stop();
-
-            _output.WriteLine($"✅ Direct Ollama call succeeded in {stopwatch.ElapsedMilliseconds}ms");
-            _output.WriteLine($"Response: {response?.Message?.Content}");
-            
-            Assert.NotNull(response);
-            Assert.NotNull(response.Message?.Content);
-        }
-        catch (TaskCanceledException ex)
-        {
-            _output.WriteLine($"❌ Direct Ollama call failed with TaskCanceledException: {ex.Message}");
-            _output.WriteLine($"Stack trace: {ex.StackTrace}");
-            throw;
-        }
-        catch (Exception ex)
-        {
-            _output.WriteLine($"❌ Direct Ollama call failed with {ex.GetType().Name}: {ex.Message}");
-            _output.WriteLine($"Stack trace: {ex.StackTrace}");
-            throw;
-        }
-    }
-
-    #endregion
 
     #region Helper Methods
 
@@ -547,26 +492,9 @@ public class HighConfidenceExtractionTests : IDisposable
     {
         var services = new ServiceCollection();
         
-       
-        
-        // Create configuration with test settings
-        var configuration = new ConfigurationBuilder()
-            .AddInMemoryCollection(new Dictionary<string, string?>
-            {
-                ["LangBridge:Models:0:Purpose"] = "Reasoning",
-                ["LangBridge:Models:0:Provider"] = "Ollama",
-                ["LangBridge:Models:0:ModelName"] = "qwen3:1.7b",
-                ["LangBridge:Models:0:ApiKey"] = "test",
-                ["LangBridge:Models:0:Endpoint"] = "http://localhost:11434",
-                ["LangBridge:Models:1:Purpose"] = "Tooling",
-                ["LangBridge:Models:1:Provider"] = "Ollama", 
-                ["LangBridge:Models:1:ModelName"] = "qwen3:1.7b",
-                ["LangBridge:Models:1:ApiKey"] = "test",
-                ["LangBridge:Models:1:Endpoint"] = "http://localhost:11434"
-            })
-            .Build();
-        
-        services.AddLangBridge(configuration);
+        // Use the configuration from TestConfiguration
+        services.AddSingleton<IConfiguration>(_testConfiguration.Configuration);
+        services.AddLangBridge(_testConfiguration.Configuration);
         
         return services.BuildServiceProvider();
     }

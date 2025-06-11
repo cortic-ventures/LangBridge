@@ -73,7 +73,7 @@ public class TypeSystemIntegrationTests
 
         Assert.True(TypeClassifier.IsSimpleType(nullableDateTimeType));
         Assert.True(TypeClassifier.IsDateTimeType(nullableDateTimeType));
-        Assert.Equal("datetime (assume 00:00:00 if time component missing)", TypeNameMapper.GetLLMFriendlyTypeName(nullableDateTimeType, true));
+        Assert.Equal("datetime (ISO 8601 format: 'YYYY-MM-DDTHH:mm:ss' with valid dates only, use null if uncertain)", TypeNameMapper.GetLLMFriendlyTypeName(nullableDateTimeType, true));
 
         Assert.True(TypeClassifier.IsSimpleType(nullableDecimalType));
         Assert.True(TypeClassifier.IsNumericType(nullableDecimalType));

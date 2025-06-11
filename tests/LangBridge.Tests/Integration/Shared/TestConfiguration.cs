@@ -1,7 +1,5 @@
-using LangBridge.Configuration;
-using LangBridge.Internal.Infrastructure.LanguageModels;
+using LangBridge.Tests.Integration.TextContextualBridge;
 using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Configuration.Json;
 
 namespace LangBridge.Tests.Integration.Shared;
 
@@ -15,33 +13,38 @@ public class TestConfiguration
     public TestConfiguration()
     {
         var builder = new ConfigurationBuilder()
-            .AddJsonFile("appsettings.json", optional: true)
-            .AddJsonFile("appsettings.test.json", optional: true)
+            .SetBasePath(Directory.GetCurrentDirectory())
+            .AddJsonFile("appsettings.json", optional: true, reloadOnChange: false)
+            .AddJsonFile("appsettings.test.json", optional: true, reloadOnChange: false)
             .AddEnvironmentVariables("LANGBRIDGE_TEST_");
 
         _configuration = builder.Build();
+        
+        // Debug output
+        var runAiTests = _configuration["TestSettings:RunAiDependentTests"];
+        if (string.IsNullOrEmpty(runAiTests))
+        {
+            Console.WriteLine($"Warning: TestSettings:RunAiDependentTests not found in configuration. Current directory: {Directory.GetCurrentDirectory()}");
+        }
     }
+    
+    /// <summary>
+    /// Gets the full configuration object for use with dependency injection.
+    /// </summary>
+    public IConfiguration Configuration => _configuration;
 
     /// <summary>
     /// Gets the timeout for AI model operations during testing.
     /// </summary>
     public TimeSpan ModelTimeout => TimeSpan.FromSeconds(
         _configuration.GetValue<int>("TestSettings:ModelTimeoutSeconds", 530));
-
-    /// <summary>
-    /// Gets the maximum number of retry attempts for AI operations.
-    /// </summary>
-    public int MaxRetryAttempts => _configuration.GetValue<int>("TestSettings:MaxRetryAttempts", 3);
-
+    
     /// <summary>
     /// Gets whether AI-dependent tests should be run (requires API keys).
     /// </summary>
-    public bool RunAiDependentTests => _configuration.GetValue<bool>("TestSettings:RunAiDependentTests", false);
-
-    /// <summary>
-    /// Gets the confidence threshold for AI test success rates.
-    /// </summary>
-    public double ConfidenceThreshold => _configuration.GetValue<double>("TestSettings:ConfidenceThreshold", 0.8);
+    public bool RunAiDependentTests => 
+        _configuration.GetValue("TestSettings:RunAiDependentTests", false) ||
+        Environment.GetEnvironmentVariable("LANGBRIDGE_TEST_RunAiDependentTests") == "true";
 
     /// <summary>
     /// Gets the number of attempts for statistical AI testing.
@@ -52,38 +55,6 @@ public class TestConfiguration
     /// Gets whether to run performance benchmarks during testing.
     /// </summary>
     public bool RunPerformanceBenchmarks => _configuration.GetValue<bool>("TestSettings:RunPerformanceBenchmarks", false);
-
-    /// <summary>
-    /// Gets LangBridge options configured for testing.
-    /// </summary>
-    public LangBridgeOptions GetTestLangBridgeOptions()
-    {
-        var options = new LangBridgeOptions();
-        _configuration.GetSection("LangBridge").Bind(options);
-        
-        // Override with test-specific settings if needed
-        if (options.Models.Count == 0)
-        {
-            // Provide default test configuration if none specified
-            options.Models.Add(new ModelConfig
-            {
-                Purpose = LanguageModelPurposeType.Reasoning,
-                Provider = AiProvider.OpenAI,
-                ModelName = "gpt-4o-mini",
-                ApiKey = GetApiKey("OpenAI") ?? string.Empty
-            });
-            
-            options.Models.Add(new ModelConfig
-            {
-                Purpose = LanguageModelPurposeType.Tooling,
-                Provider = AiProvider.OpenAI,
-                ModelName = "gpt-4o-mini",
-                ApiKey = GetApiKey("OpenAI") ?? string.Empty
-            });
-        }
-
-        return options;
-    }
 
     /// <summary>
     /// Gets API key for the specified provider.
@@ -99,7 +70,7 @@ public class TestConfiguration
     /// </summary>
     public bool HasRequiredApiKeys()
     {
-        var requiredProviders = new[] { "OpenAI", "Ollama" }; // Support both OpenAI and Ollama
+        var requiredProviders = new[] { "OpenRouter", "Ollama" }; // Support both OpenAI and Ollama
         return requiredProviders.Any(provider => !string.IsNullOrEmpty(GetApiKey(provider)));
     }
 
@@ -119,14 +90,6 @@ public class TestConfiguration
     }
 
     /// <summary>
-    /// Creates a CancellationToken with the configured model timeout.
-    /// </summary>
-    public CancellationToken CreateTimeoutToken()
-    {
-        return new CancellationTokenSource(ModelTimeout).Token;
-    }
-
-    /// <summary>
     /// Determines if a test should be skipped based on configuration.
     /// </summary>
     public bool ShouldSkipTest(string testCategory)
@@ -142,7 +105,7 @@ public class TestConfiguration
 
     private static bool IsAiDependentCategory(string category)
     {
-        var aiDependentCategories = new[] { "HighConfidence", "ProgressiveComplexity", "Resilience", "MultiModel" };
+        var aiDependentCategories = new[] { nameof(HighConfidenceExtractionTests), "ComplexShowcase" };
         return aiDependentCategories.Contains(category, StringComparer.OrdinalIgnoreCase);
     }
 }
@@ -159,16 +122,6 @@ public class TestScenarioSettings
 }
 
 /// <summary>
-/// Attribute to mark tests that require AI models and should be skipped if not configured.
-/// </summary>
-[AttributeUsage(AttributeTargets.Method | AttributeTargets.Class)]
-public class RequiresAiModelsAttribute : Attribute
-{
-    public string[]? RequiredProviders { get; set; }
-    public string? Category { get; set; }
-}
-
-/// <summary>
 /// Custom exception for skipping tests dynamically.
 /// </summary>
 public class SkipTestException : Exception
@@ -181,26 +134,24 @@ public class SkipTestException : Exception
 /// </summary>
 public static class TestConfigurationHelper
 {
-    private static readonly TestConfiguration _instance = new();
-
-    public static TestConfiguration Instance => _instance;
-
+    private static readonly TestConfiguration Instance = new();
+    
     /// <summary>
     /// Skips a test if AI models are not configured or available.
     /// </summary>
     public static void SkipIfAiModelsNotConfigured(string? testCategory = null)
     {
-        if (!_instance.RunAiDependentTests)
+        if (!Instance.RunAiDependentTests)
         {
             throw new SkipTestException("AI-dependent tests are disabled. Set LANGBRIDGE_TEST_RunAiDependentTests=true to enable.");
         }
 
-        if (!_instance.HasRequiredApiKeys())
+        if (!Instance.HasRequiredApiKeys())
         {
             throw new SkipTestException("Required API keys are not configured for AI model testing.");
         }
 
-        if (testCategory != null && _instance.ShouldSkipTest(testCategory))
+        if (testCategory != null && Instance.ShouldSkipTest(testCategory))
         {
             throw new SkipTestException($"Test category '{testCategory}' is disabled in configuration.");
         }
@@ -211,11 +162,11 @@ public static class TestConfigurationHelper
     /// </summary>
     public static CancellationToken GetTimeoutToken(string? category = null)
     {
-        var timeout = _instance.ModelTimeout;
+        var timeout = Instance.ModelTimeout;
         
         if (category != null)
         {
-            var settings = _instance.GetScenarioSettings(category);
+            var settings = Instance.GetScenarioSettings(category);
             timeout = TimeSpan.FromMilliseconds(timeout.TotalMilliseconds * settings.TimeoutMultiplier);
         }
 

@@ -30,6 +30,19 @@ internal class ComprehensiveJsonSchemaGenerator : IComprehensiveJsonSchemaGenera
             return $"{innerSchema} | null";
         }
         
+        // Handle dictionaries first (before general collection handling)
+        if (TypeClassifier.IsDictionaryType(type))
+        {
+            var keyValueTypes = TypeClassifier.GetDictionaryKeyValueTypes(type);
+            if (keyValueTypes.HasValue)
+            {
+                var keyTypeName = TypeNameMapper.GetLLMFriendlyTypeName(keyValueTypes.Value.keyType, true);
+                var valueTypeName = GetValueTypeRepresentation(keyValueTypes.Value.valueType, indent);
+                return $"Dictionary<{keyTypeName}, {valueTypeName}>";
+            }
+            return "Dictionary<string, any>";
+        }
+        
         // Handle arrays and collections
         if (TypeClassifier.IsCollectionType(type))
         {
@@ -138,6 +151,51 @@ internal class ComprehensiveJsonSchemaGenerator : IComprehensiveJsonSchemaGenera
         return descAttr?.Description ?? string.Empty;
     }
     
-    
+    /// <summary>
+    /// Gets the appropriate type representation for dictionary values, handling nested types recursively.
+    /// </summary>
+    private string GetValueTypeRepresentation(Type valueType, string indent)
+    {
+        // Handle simple types
+        if (TypeClassifier.IsSimpleType(valueType))
+        {
+            return TypeNameMapper.GetLLMFriendlyTypeName(valueType, true);
+        }
+        
+        // Handle nested dictionaries recursively
+        if (TypeClassifier.IsDictionaryType(valueType))
+        {
+            var nestedKeyValueTypes = TypeClassifier.GetDictionaryKeyValueTypes(valueType);
+            if (nestedKeyValueTypes.HasValue)
+            {
+                var nestedKeyTypeName = TypeNameMapper.GetLLMFriendlyTypeName(nestedKeyValueTypes.Value.keyType, true);
+                var nestedValueTypeName = GetValueTypeRepresentation(nestedKeyValueTypes.Value.valueType, indent);
+                return $"Dictionary<{nestedKeyTypeName}, {nestedValueTypeName}>";
+            }
+            return "Dictionary<string, any>";
+        }
+        
+        // Handle collections recursively
+        if (TypeClassifier.IsCollectionType(valueType))
+        {
+            var elementType = TypeClassifier.GetCollectionElementType(valueType);
+            if (elementType != null)
+            {
+                if (TypeClassifier.IsSimpleType(elementType))
+                {
+                    return $"Array<{TypeNameMapper.GetLLMFriendlyTypeName(elementType, true)}>";
+                }
+                else
+                {
+                    var elementRepresentation = GetValueTypeRepresentation(elementType, indent);
+                    return $"Array<{elementRepresentation}>";
+                }
+            }
+            return "Array<any>";
+        }
+        
+        // For complex objects, generate the full recursive structure
+        return GenerateTypeSchema(valueType, indent);
+    }
     
 }

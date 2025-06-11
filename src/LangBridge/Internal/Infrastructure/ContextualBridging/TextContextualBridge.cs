@@ -25,9 +25,10 @@ internal class TextContextualBridge : ITextContextualBridge
     }
 
     /// <inheritdoc/>
-    public async Task<Result<T>> TryFullExtractionAsync<T>(
+    public async Task<Result<T>> ExtractAsync<T>(
         string input,
         string query,
+        ExtractionMode mode = ExtractionMode.AllOrNothing,
         CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(input))
@@ -35,6 +36,10 @@ internal class TextContextualBridge : ITextContextualBridge
 
         if (string.IsNullOrWhiteSpace(query))
             throw new ArgumentException("Query cannot be null or whitespace", nameof(query));
+
+        // For now, only AllOrNothing mode is supported
+        if (mode != ExtractionMode.AllOrNothing)
+            throw new NotSupportedException($"Extraction mode '{mode}' is not yet supported. Currently only AllOrNothing mode is available.");
 
         var isSimpleType = TypeClassifier.IsSimpleType(typeof(T));
         
@@ -66,10 +71,10 @@ internal class TextContextualBridge : ITextContextualBridge
     private async Task<Result> CheckQueryFeasibilityWithComplexType<T>(string input, string query,
         CancellationToken cancellationToken)
     {
-        var propertyNames = TypePropertyPathExtractor.ExtractPropertyPaths<T>();
-        var infoAvailabilityAssessmentTasks = propertyNames.Select(propertyName =>
+        var propertyInfos = TypePropertyPathExtractor.ExtractPropertyInfoWithDescriptions<T>();
+        var infoAvailabilityAssessmentTasks = propertyInfos.Select(propertyInfo =>
             _reasoningModel.ReasonAsync(
-                $"Given this text block: <input_text_block>{input}</input_text_block> AND In the context of the following query <query> '{query}'</query> Do we have enough information to infer this property <property>{propertyName}</property> as part of fulfilling the presented query?",
+                $"Given this text block: <input_text_block>{input}</input_text_block> AND In the context of the following query <query> '{query}'</query> Do we have enough information to infer this property <property>{propertyInfo.FullDescription}</property> as part of fulfilling the presented query?",
                 systemInstructions:
                 "Final response must start with YES or NO, followed by a ':' and then any additional explanation. Keep it short and concise! If the answer is yes, no additional explanation is required.",
                 cancellationToken));
@@ -82,10 +87,10 @@ internal class TextContextualBridge : ITextContextualBridge
             return Result.Success();
 
         var failureExplanations = canFulfillPropertiesOfQueryAssessmentResults
-            .Zip(propertyNames, (response, property) => new { Response = response, Property = property })
+            .Zip(propertyInfos, (response, property) => new { Response = response, Property = property })
             .Where(x => x.Response.StartsWith("NO", StringComparison.OrdinalIgnoreCase))
             .Select(x =>
-                $"{x.Property}: {x.Response.Split(":").LastOrDefault()?.Trim() ?? NotEnoughInformationAvailableGenericErrorMessage}") // Remove "NO: " prefix
+                $"{x.Property.Path}: {x.Property.TypeName} - {x.Response.Split(":").LastOrDefault()?.Trim() ?? NotEnoughInformationAvailableGenericErrorMessage}") // Include type information with better formatting
             .ToList();
 
         var errorMessage = string.Join("; ", failureExplanations);
@@ -95,15 +100,19 @@ internal class TextContextualBridge : ITextContextualBridge
     private async Task<string> ExtractRawInformationWithComplexType<T>(string input, string query,
         CancellationToken cancellationToken)
     {
-        var propertyNames = TypePropertyPathExtractor.ExtractPropertyPaths<T>();
-        var propertiesValueExtractionTasks = propertyNames.Select(propertyName =>
+        var propertyInfos = TypePropertyPathExtractor.ExtractPropertyInfoWithDescriptions<T>();
+        var propertiesValueExtractionTasks = propertyInfos.Select(propertyInfo =>
             _reasoningModel.ReasonAsync(
-                $"Given this text block: <input_text_block>{input}</input_text_block> AND In the context of the following query <query>{query}</query> Extract the value of this property <property>{propertyName}</property> as part of fulfilling the presented query.",
+                $"Given this text block: <input_text_block>{input}</input_text_block> AND In the context of the following query <query>{query}</query> Extract the value of this property <property>{propertyInfo.FullDescription}</property> as part of fulfilling the presented query.",
                 systemInstructions: "Final response must be only the requested value.", cancellationToken));
 
         var jsonPropertiesValue = await Task.WhenAll(propertiesValueExtractionTasks);
 
-        return string.Join("\n", jsonPropertiesValue);
+        // Include property names with values for better structuring guidance
+        var labeledValues = propertyInfos.Zip(jsonPropertiesValue, (propertyInfo, value) => 
+            $"{propertyInfo.Path}: {value}").ToArray();
+
+        return string.Join("\n", labeledValues);
     }
 
     private async Task<Result> CheckQueryFeasibilityWithSimpleType<T>(string input, string query,

@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Generic;
 
 namespace LangBridge.Internal.Infrastructure.TypeSystem;
 
@@ -120,6 +121,51 @@ internal static class TypeClassifier
         return false;
     }
     
+    /// <summary>
+    /// Determines if a type is a dictionary type (implements IDictionary).
+    /// </summary>
+    /// <param name="type">The type to check.</param>
+    /// <returns>True if the type is a dictionary type, false otherwise.</returns>
+    public static bool IsDictionaryType(Type type)
+    {
+        if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(Dictionary<,>))
+            return true;
+            
+        // Check if it implements IDictionary<TKey, TValue>
+        return type.GetInterfaces()
+            .Any(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IDictionary<,>));
+    }
+    
+    /// <summary>
+    /// Gets the key and value types of a dictionary type.
+    /// </summary>
+    /// <param name="dictionaryType">The dictionary type to analyze.</param>
+    /// <returns>A tuple containing the key type and value type, or null if not a dictionary.</returns>
+    public static (Type keyType, Type valueType)? GetDictionaryKeyValueTypes(Type dictionaryType)
+    {
+        if (!IsDictionaryType(dictionaryType))
+            return null;
+            
+        // Handle direct Dictionary<TKey, TValue>
+        if (dictionaryType.IsGenericType && dictionaryType.GetGenericTypeDefinition() == typeof(Dictionary<,>))
+        {
+            var args = dictionaryType.GetGenericArguments();
+            return (args[0], args[1]);
+        }
+        
+        // Check IDictionary<TKey, TValue> interface
+        var dictionaryInterface = dictionaryType.GetInterfaces()
+            .FirstOrDefault(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IDictionary<,>));
+            
+        if (dictionaryInterface != null)
+        {
+            var args = dictionaryInterface.GetGenericArguments();
+            return (args[0], args[1]);
+        }
+        
+        return null;
+    }
+
     /// <summary>
     /// Gets the element type of a collection type.
     /// </summary>

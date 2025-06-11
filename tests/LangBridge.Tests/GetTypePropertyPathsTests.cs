@@ -73,7 +73,7 @@ public class GetTypePropertyPathsTests
         // Assert
         Assert.Contains("Amount:decimal", paths);
         Assert.Contains("OrderId:string", paths);
-        Assert.Contains("PaymentDueDate:datetime (assume 00:00:00 if time component missing)", paths);
+        Assert.Contains("PaymentDueDate:datetime (ISO 8601 format: 'YYYY-MM-DDTHH:mm:ss' with valid dates only, use null if uncertain)", paths);
         Assert.Contains("UserInvoiceDetails: Array<{Name:string}>", paths);
     }
     
