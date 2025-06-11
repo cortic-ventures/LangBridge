@@ -43,15 +43,19 @@ internal static class TypeNameMapper
             
         // DateTime types
         if (actualType == typeof(DateTime) || actualType == typeof(DateTimeOffset))
-            return includeFormatHints ? "datetime (assume 00:00:00 if time component missing)" : "string";
+            return includeFormatHints ? "datetime (ISO 8601 format: 'YYYY-MM-DDTHH:mm:ss' with valid dates only, use null if uncertain)" : "string";
             
         // DateOnly type (.NET 6+)
         if (actualType.Name == "DateOnly")
             return includeFormatHints ? "date-iso" : "string";
             
-        // TimeOnly and TimeSpan types
-        if (actualType.Name == "TimeOnly" || actualType == typeof(TimeSpan))
+        // TimeOnly type
+        if (actualType.Name == "TimeOnly")
             return includeFormatHints ? "time-iso" : "string";
+            
+        // TimeSpan type - use format that .NET can deserialize
+        if (actualType == typeof(TimeSpan))
+            return includeFormatHints ? "timespan (hours:minutes:seconds, e.g. '02:30:00' for 2.5 hours, nothing else is accepted)" : "string";
             
         // GUID type
         if (actualType == typeof(Guid))

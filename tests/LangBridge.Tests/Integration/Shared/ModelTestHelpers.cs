@@ -94,9 +94,10 @@ public static class ModelTestHelpers
             
             try
             {
-                var result = await bridge.TryFullExtractionAsync<T>(
+                var result = await bridge.ExtractAsync<T>(
                     scenario.Input, 
                     scenario.Query, 
+                    ExtractionMode.AllOrNothing,
                     cancellationToken);
                 
                 stopwatch.Stop();
@@ -126,9 +127,10 @@ public static class ModelTestHelpers
         
         try
         {
-            var result = await bridge.TryFullExtractionAsync<T>(
+            var result = await bridge.ExtractAsync<T>(
                 scenario.Input, 
                 scenario.Query, 
+                ExtractionMode.AllOrNothing,
                 cancellationToken);
             
             stopwatch.Stop();
@@ -140,29 +142,6 @@ public static class ModelTestHelpers
             var result = Result.Failure<T>(ex.Message);
             return new SingleTestResult<T>(scenario, result, stopwatch.Elapsed);
         }
-    }
-
-    /// <summary>
-    /// Creates a complex mock scenario for testing property-level extraction failures.
-    /// </summary>
-    public static ITextContextualBridge CreatePartialFailureBridge(params string[] failingProperties)
-    {
-        var reasoningModel = new MockReasoningModel();
-        
-        // Configure specific properties to fail
-        foreach (var property in failingProperties)
-        {
-            reasoningModel.WithResponseForKey($"Do we have enough information to infer this property <property>{property}", 
-                $"NO: {property} information not available");
-        }
-        
-        // Default to success for other properties
-        reasoningModel.WithFallbackResponse("YES: Information available");
-
-        var dataStructuringModel = new MockDataStructuringModel()
-            .WithAllFailures();
-
-        return CreateDeterministicBridge(reasoningModel, dataStructuringModel);
     }
 }
 
@@ -186,9 +165,7 @@ public class TestResults<T>
     public int FailureCount => Results.Count(r => r.IsFailure);
     public double SuccessRate => Results.Count == 0 ? 0.0 : (double)SuccessCount / Results.Count;
     public TimeSpan AverageTime => Timings.Count == 0 ? TimeSpan.Zero : TimeSpan.FromMilliseconds(Timings.Average(t => t.TotalMilliseconds));
-    public TimeSpan MaxTime => Timings.Count == 0 ? TimeSpan.Zero : Timings.Max();
-    public TimeSpan MinTime => Timings.Count == 0 ? TimeSpan.Zero : Timings.Min();
-
+    
     public IEnumerable<string> FailureReasons => Results
         .Where(r => r.IsFailure)
         .Select(r => r.Error)
@@ -210,9 +187,4 @@ public class SingleTestResult<T>
         Result = result;
         Duration = duration;
     }
-
-    public bool IsSuccess => Result.IsSuccess;
-    public bool IsFailure => Result.IsFailure;
-    public T? Value => Result.IsSuccess ? Result.Value : default;
-    public string? Error => Result.IsFailure ? Result.Error : null;
 }

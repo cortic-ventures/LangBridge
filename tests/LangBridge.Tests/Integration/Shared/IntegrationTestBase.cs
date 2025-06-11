@@ -1,6 +1,5 @@
 using LangBridge.ContextualBridging;
 using LangBridge.Internal.Abstractions.LanguageModels;
-using LangBridge.Internal.Infrastructure.ContextualBridging;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace LangBridge.Tests.Integration.Shared;

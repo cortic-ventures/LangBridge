@@ -40,11 +40,11 @@ public class TypeNameMapperTests
 
     [Theory]
     [InlineData(typeof(DateTime), false, "string")]
-    [InlineData(typeof(DateTime), true, "datetime (assume 00:00:00 if time component missing)")]
+    [InlineData(typeof(DateTime), true, "datetime (ISO 8601 format: 'YYYY-MM-DDTHH:mm:ss' with valid dates only, use null if uncertain)")]
     [InlineData(typeof(DateTimeOffset), false, "string")]
-    [InlineData(typeof(DateTimeOffset), true, "datetime (assume 00:00:00 if time component missing)")]
+    [InlineData(typeof(DateTimeOffset), true, "datetime (ISO 8601 format: 'YYYY-MM-DDTHH:mm:ss' with valid dates only, use null if uncertain)")]
     [InlineData(typeof(TimeSpan), false, "string")]
-    [InlineData(typeof(TimeSpan), true, "time-iso")]
+    [InlineData(typeof(TimeSpan), true, "timespan (hours:minutes:seconds, e.g. '02:30:00' for 2.5 hours, nothing else is accepted)")]
     [InlineData(typeof(Guid), false, "string")]
     [InlineData(typeof(Guid), true, "uuid")]
     public void GetLLMFriendlyTypeName_WithFormatHints(Type type, bool includeFormatHints, string expected)
@@ -101,7 +101,7 @@ public class TypeNameMapperTests
     [Theory]
     [InlineData(typeof(int?), true, "integer")]
     [InlineData(typeof(int?), false, "number")]
-    [InlineData(typeof(DateTime?), true, "datetime (assume 00:00:00 if time component missing)")]
+    [InlineData(typeof(DateTime?), true, "datetime (ISO 8601 format: 'YYYY-MM-DDTHH:mm:ss' with valid dates only, use null if uncertain)")]
     [InlineData(typeof(DateTime?), false, "string")]
     [InlineData(typeof(decimal?), false, "number")]
     [InlineData(typeof(decimal?), true, "decimal")]

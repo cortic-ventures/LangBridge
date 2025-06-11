@@ -1,3 +1,4 @@
+using LangBridge.ContextualBridging;
 using LangBridge.Internal.Infrastructure.Processing;
 using LangBridge.Tests.Integration.Shared;
 using CSharpFunctionalExtensions;
@@ -13,7 +14,7 @@ public class DeterministicTests : IntegrationTestBase
     #region Simple Type Tests
 
     [Fact]
-    public async Task TryFullExtractionAsync_SimpleType_SuccessfulExtraction_ReturnsSuccess()
+    public async Task ExtractAsync_SimpleType_SuccessfulExtraction_ReturnsSuccess()
     {
         // Arrange
         var input = "The temperature is 25 degrees Celsius.";
@@ -24,7 +25,7 @@ public class DeterministicTests : IntegrationTestBase
         MockDataStructuringModel.WithResponse(new ResultWrapper<int> { Result = 25 });
 
         // Act
-        var result = await TextContextualBridge.TryFullExtractionAsync<int>(input, query);
+        var result = await TextContextualBridge.ExtractAsync<int>(input, query);
 
         // Assert
         Assert.True(result.IsSuccess);
@@ -32,7 +33,7 @@ public class DeterministicTests : IntegrationTestBase
     }
 
     [Fact]
-    public async Task TryFullExtractionAsync_SimpleType_FeasibilityCheckFails_ReturnsFailure()
+    public async Task ExtractAsync_SimpleType_FeasibilityCheckFails_ReturnsFailure()
     {
         // Arrange
         var input = "The weather is sunny today.";
@@ -41,7 +42,7 @@ public class DeterministicTests : IntegrationTestBase
         ConfigureFailedFeasibilityCheck("Temperature not mentioned in text");
 
         // Act
-        var result = await TextContextualBridge.TryFullExtractionAsync<int>(input, query);
+        var result = await TextContextualBridge.ExtractAsync<int>(input, query);
 
         // Assert
         Assert.True(result.IsFailure);
@@ -49,7 +50,7 @@ public class DeterministicTests : IntegrationTestBase
     }
 
     [Fact]
-    public async Task TryFullExtractionAsync_SimpleType_DataStructuringFails_ReturnsFailure()
+    public async Task ExtractAsync_SimpleType_DataStructuringFails_ReturnsFailure()
     {
         // Arrange
         var input = "The temperature is 25 degrees Celsius.";
@@ -60,7 +61,7 @@ public class DeterministicTests : IntegrationTestBase
         MockDataStructuringModel.WithAllFailures(); // Returns null
 
         // Act
-        var result = await TextContextualBridge.TryFullExtractionAsync<int>(input, query);
+        var result = await TextContextualBridge.ExtractAsync<int>(input, query);
 
         // Assert
         Assert.True(result.IsFailure);
@@ -72,7 +73,7 @@ public class DeterministicTests : IntegrationTestBase
     [InlineData("false", false)]
     [InlineData("yes", true)]
     [InlineData("no", false)]
-    public async Task TryFullExtractionAsync_BooleanType_VariousValues_ExtractsCorrectly(string extractedValue, bool expectedResult)
+    public async Task ExtractAsync_BooleanType_VariousValues_ExtractsCorrectly(string extractedValue, bool expectedResult)
     {
         // Arrange
         var input = "The system is currently active.";
@@ -83,7 +84,7 @@ public class DeterministicTests : IntegrationTestBase
         MockDataStructuringModel.WithResponse(new ResultWrapper<bool> { Result = expectedResult });
 
         // Act
-        var result = await TextContextualBridge.TryFullExtractionAsync<bool>(input, query);
+        var result = await TextContextualBridge.ExtractAsync<bool>(input, query);
 
         // Assert
         Assert.True(result.IsSuccess);
@@ -91,7 +92,7 @@ public class DeterministicTests : IntegrationTestBase
     }
 
     [Fact]
-    public async Task TryFullExtractionAsync_StringType_SuccessfulExtraction_ReturnsCorrectValue()
+    public async Task ExtractAsync_StringType_SuccessfulExtraction_ReturnsCorrectValue()
     {
         // Arrange
         var input = "The product name is 'Advanced Widget Pro'.";
@@ -103,7 +104,7 @@ public class DeterministicTests : IntegrationTestBase
         MockDataStructuringModel.WithResponse(new ResultWrapper<string> { Result = expectedName });
 
         // Act
-        var result = await TextContextualBridge.TryFullExtractionAsync<string>(input, query);
+        var result = await TextContextualBridge.ExtractAsync<string>(input, query);
 
         // Assert
         Assert.True(result.IsSuccess);
@@ -115,7 +116,7 @@ public class DeterministicTests : IntegrationTestBase
     #region Complex Type Tests
 
     [Fact]
-    public async Task TryFullExtractionAsync_ComplexType_SuccessfulExtraction_ReturnsCompleteObject()
+    public async Task ExtractAsync_ComplexType_SuccessfulExtraction_ReturnsCompleteObject()
     {
         // Arrange
         var input = "John Doe, age 30, works as a Software Engineer.";
@@ -138,7 +139,7 @@ public class DeterministicTests : IntegrationTestBase
         MockDataStructuringModel.WithResponse(new ResultWrapper<PersonModel> { Result = expectedPerson });
 
         // Act
-        var result = await TextContextualBridge.TryFullExtractionAsync<PersonModel>(input, query);
+        var result = await TextContextualBridge.ExtractAsync<PersonModel>(input, query);
 
         // Assert
         Assert.True(result.IsSuccess);
@@ -149,29 +150,28 @@ public class DeterministicTests : IntegrationTestBase
     }
 
     [Fact]
-    public async Task TryFullExtractionAsync_ComplexType_PartialInformation_ReturnsFailure()
+    public async Task ExtractAsync_ComplexType_PartialInformation_ReturnsFailure()
     {
         // Arrange
         var input = "John Doe works as a Software Engineer."; // Missing age
         var query = "Extract complete person information.";
         
-        // Configure mixed feasibility responses
+        // Configure mixed feasibility responses - need to match the actual property descriptions in prompts
         MockReasoningModel
-            .WithResponseForKey("Name:string", "YES: Name is available")
-            .WithResponseForKey("Age:integer", "NO: Age not mentioned")
-            .WithResponseForKey("Occupation:string", "YES: Occupation is available");
+            .WithResponseForKey("Name: string", "YES: Name is available")
+            .WithResponseForKey("Age: integer", "NO: Age not mentioned")
+            .WithResponseForKey("Occupation: string", "YES: Occupation is available");
 
         // Act
-        var result = await TextContextualBridge.TryFullExtractionAsync<PersonModel>(input, query);
+        var result = await TextContextualBridge.ExtractAsync<PersonModel>(input, query);
 
         // Assert
         Assert.True(result.IsFailure);
-        Assert.Contains("Age:integer", result.Error);
-        Assert.Contains("Age not mentioned", result.Error);
+        Assert.Contains("Age: integer - Age not mentioned", result.Error);
     }
 
     [Fact]
-    public async Task TryFullExtractionAsync_NestedComplexType_SuccessfulExtraction_ReturnsNestedObject()
+    public async Task ExtractAsync_NestedComplexType_SuccessfulExtraction_ReturnsNestedObject()
     {
         // Arrange
         var input = "Product: Advanced Widget, Price: $99.99, Supplier: TechCorp Inc, Contact: tech@corp.com";
@@ -193,7 +193,7 @@ public class DeterministicTests : IntegrationTestBase
         MockDataStructuringModel.WithResponse(new ResultWrapper<ProductWithSupplierModel> { Result = expectedProduct });
 
         // Act
-        var result = await TextContextualBridge.TryFullExtractionAsync<ProductWithSupplierModel>(input, query);
+        var result = await TextContextualBridge.ExtractAsync<ProductWithSupplierModel>(input, query);
 
         // Assert
         Assert.True(result.IsSuccess);
@@ -213,22 +213,22 @@ public class DeterministicTests : IntegrationTestBase
     [InlineData(null, "valid query")]
     [InlineData("", "valid query")]
     [InlineData("   ", "valid query")]
-    public async Task TryFullExtractionAsync_InvalidInput_ThrowsArgumentException(string? input, string query)
+    public async Task ExtractAsync_InvalidInput_ThrowsArgumentException(string? input, string query)
     {
         // Act & Assert
         await Assert.ThrowsAsync<ArgumentException>(() => 
-            TextContextualBridge.TryFullExtractionAsync<string>(input!, query));
+            TextContextualBridge.ExtractAsync<string>(input!, query));
     }
 
     [Theory]
     [InlineData("valid input", null)]
     [InlineData("valid input", "")]
     [InlineData("valid input", "   ")]
-    public async Task TryFullExtractionAsync_InvalidQuery_ThrowsArgumentException(string input, string? query)
+    public async Task ExtractAsync_InvalidQuery_ThrowsArgumentException(string input, string? query)
     {
         // Act & Assert
         await Assert.ThrowsAsync<ArgumentException>(() => 
-            TextContextualBridge.TryFullExtractionAsync<string>(input, query!));
+            TextContextualBridge.ExtractAsync<string>(input, query!));
     }
 
     #endregion
@@ -236,7 +236,7 @@ public class DeterministicTests : IntegrationTestBase
     #region Cancellation Token Tests
 
     [Fact]
-    public async Task TryFullExtractionAsync_CancellationTokenCancelled_PropagatesCancellation()
+    public async Task ExtractAsync_CancellationTokenCancelled_PropagatesCancellation()
     {
         // Arrange
         using var cts = new CancellationTokenSource();
@@ -247,7 +247,7 @@ public class DeterministicTests : IntegrationTestBase
 
         // Act & Assert
         await Assert.ThrowsAsync<OperationCanceledException>(() => 
-            TextContextualBridge.TryFullExtractionAsync<string>(input, query, cts.Token));
+            TextContextualBridge.ExtractAsync<string>(input, query, ExtractionMode.AllOrNothing, cts.Token));
     }
 
     #endregion
@@ -255,7 +255,7 @@ public class DeterministicTests : IntegrationTestBase
     #region Edge Case Tests
 
     [Fact]
-    public async Task TryFullExtractionAsync_NullableType_WithValue_ReturnsValue()
+    public async Task ExtractAsync_NullableType_WithValue_ReturnsValue()
     {
         // Arrange
         var input = "The count is 42.";
@@ -266,7 +266,7 @@ public class DeterministicTests : IntegrationTestBase
         MockDataStructuringModel.WithResponse(new ResultWrapper<int?> { Result = 42 });
 
         // Act
-        var result = await TextContextualBridge.TryFullExtractionAsync<int?>(input, query);
+        var result = await TextContextualBridge.ExtractAsync<int?>(input, query);
 
         // Assert
         Assert.True(result.IsSuccess);
@@ -274,7 +274,7 @@ public class DeterministicTests : IntegrationTestBase
     }
 
     [Fact]
-    public async Task TryFullExtractionAsync_NullableType_WithNull_ReturnsFailure()
+    public async Task ExtractAsync_NullableType_WithNull_ReturnsFailure()
     {
         // Arrange
         var input = "No count information available.";
@@ -285,7 +285,7 @@ public class DeterministicTests : IntegrationTestBase
         MockDataStructuringModel.WithResponse(new ResultWrapper<int?> { Result = null });
 
         // Act
-        var result = await TextContextualBridge.TryFullExtractionAsync<int?>(input, query);
+        var result = await TextContextualBridge.ExtractAsync<int?>(input, query);
 
         // Assert - Currently TextContextualBridge treats null Result as failure
         // This is the current implementation behavior
@@ -294,7 +294,7 @@ public class DeterministicTests : IntegrationTestBase
     }
 
     [Fact]
-    public async Task TryFullExtractionAsync_DateTimeType_ValidFormat_ReturnsCorrectDate()
+    public async Task ExtractAsync_DateTimeType_ValidFormat_ReturnsCorrectDate()
     {
         // Arrange
         var input = "The event is scheduled for 2024-03-15.";
@@ -306,7 +306,7 @@ public class DeterministicTests : IntegrationTestBase
         MockDataStructuringModel.WithResponse(new ResultWrapper<DateTime> { Result = expectedDate });
 
         // Act
-        var result = await TextContextualBridge.TryFullExtractionAsync<DateTime>(input, query);
+        var result = await TextContextualBridge.ExtractAsync<DateTime>(input, query);
 
         // Assert
         Assert.True(result.IsSuccess);
@@ -314,7 +314,7 @@ public class DeterministicTests : IntegrationTestBase
     }
 
     [Fact]
-    public async Task TryFullExtractionAsync_EmptyResultWrapper_ReturnsFailure()
+    public async Task ExtractAsync_EmptyResultWrapper_ReturnsFailure()
     {
         // Arrange
         var input = "Some input text.";
@@ -325,7 +325,7 @@ public class DeterministicTests : IntegrationTestBase
         MockDataStructuringModel.WithResponse(new ResultWrapper<string> { Result = null! });
 
         // Act
-        var result = await TextContextualBridge.TryFullExtractionAsync<string>(input, query);
+        var result = await TextContextualBridge.ExtractAsync<string>(input, query);
 
         // Assert
         Assert.True(result.IsFailure);
@@ -333,7 +333,7 @@ public class DeterministicTests : IntegrationTestBase
     }
 
     [Fact]
-    public async Task TryFullExtractionAsync_NullResultWrapper_ReturnsFailure()
+    public async Task ExtractAsync_NullResultWrapper_ReturnsFailure()
     {
         // Arrange
         var input = "Some input text.";
@@ -344,7 +344,7 @@ public class DeterministicTests : IntegrationTestBase
         MockDataStructuringModel.WithResponse<ResultWrapper<string>>(null);
 
         // Act
-        var result = await TextContextualBridge.TryFullExtractionAsync<string>(input, query);
+        var result = await TextContextualBridge.ExtractAsync<string>(input, query);
 
         // Assert
         Assert.True(result.IsFailure);
@@ -352,7 +352,7 @@ public class DeterministicTests : IntegrationTestBase
     }
 
     [Fact]
-    public async Task TryFullExtractionAsync_LargeComplexObject_HandlesSuccessfully()
+    public async Task ExtractAsync_LargeComplexObject_HandlesSuccessfully()
     {
         // Arrange
         var input = "Complex data with many properties...";
@@ -379,7 +379,7 @@ public class DeterministicTests : IntegrationTestBase
         MockDataStructuringModel.WithResponse(new ResultWrapper<LargeComplexModel> { Result = largeObject });
 
         // Act
-        var result = await TextContextualBridge.TryFullExtractionAsync<LargeComplexModel>(input, query);
+        var result = await TextContextualBridge.ExtractAsync<LargeComplexModel>(input, query);
 
         // Assert
         Assert.True(result.IsSuccess);
@@ -389,7 +389,7 @@ public class DeterministicTests : IntegrationTestBase
     }
 
     [Fact]
-    public async Task TryFullExtractionAsync_MultipleComplexProperties_PartialFailure_ReturnsDetailedError()
+    public async Task ExtractAsync_MultipleComplexProperties_PartialFailure_ReturnsDetailedError()
     {
         // Arrange
         var input = "John works as an engineer but age is not mentioned";
@@ -397,25 +397,23 @@ public class DeterministicTests : IntegrationTestBase
 
         // Configure mixed responses - some properties available, others not
         MockReasoningModel
-            .WithResponseForKey("Name:string", "YES: Name is John")
-            .WithResponseForKey("Age:integer", "NO: Age is not mentioned in the text")
-            .WithResponseForKey("Occupation:string", "YES: Occupation is engineer")
-            .WithResponseForKey("Email:string", "NO: Email not provided");
+            .WithResponseForKey("Name: string", "YES: Name is John")
+            .WithResponseForKey("Age: integer", "NO: Age is not mentioned in the text")
+            .WithResponseForKey("Occupation: string", "YES: Occupation is engineer")
+            .WithResponseForKey("Email: string", "NO: Email not provided");
 
         // Act
-        var result = await TextContextualBridge.TryFullExtractionAsync<PersonWithEmailModel>(input, query);
+        var result = await TextContextualBridge.ExtractAsync<PersonWithEmailModel>(input, query);
 
         // Assert
         Assert.True(result.IsFailure);
         var errorMessage = result.Error;
-        Assert.Contains("Age:integer", errorMessage);
-        Assert.Contains("Age is not mentioned in the text", errorMessage);
-        Assert.Contains("Email:string", errorMessage);
-        Assert.Contains("Email not provided", errorMessage);
+        Assert.Contains("Age: integer - Age is not mentioned in the text", errorMessage);
+        Assert.Contains("Email: string - Email not provided", errorMessage);
     }
 
     [Fact]
-    public async Task TryFullExtractionAsync_ComplexType_AllPropertiesFail_ReturnsCombinedErrors()
+    public async Task ExtractAsync_ComplexType_AllPropertiesFail_ReturnsCombinedErrors()
     {
         // Arrange
         var input = "Some irrelevant text.";
@@ -423,26 +421,23 @@ public class DeterministicTests : IntegrationTestBase
 
         // Configure all properties to fail feasibility check
         MockReasoningModel
-            .WithResponseForKey("Name:string", "NO: Name not mentioned")
-            .WithResponseForKey("Age:integer", "NO: Age not available")
-            .WithResponseForKey("Occupation:string", "NO: Occupation unknown");
+            .WithResponseForKey("Name: string", "NO: Name not mentioned")
+            .WithResponseForKey("Age: integer", "NO: Age not available")
+            .WithResponseForKey("Occupation: string", "NO: Occupation unknown");
 
         // Act
-        var result = await TextContextualBridge.TryFullExtractionAsync<PersonModel>(input, query);
+        var result = await TextContextualBridge.ExtractAsync<PersonModel>(input, query);
 
         // Assert
         Assert.True(result.IsFailure);
         var errorMessage = result.Error;
-        Assert.Contains("Name:string", errorMessage);
-        Assert.Contains("Age:integer", errorMessage);
-        Assert.Contains("Occupation:string", errorMessage);
-        Assert.Contains("Name not mentioned", errorMessage);
-        Assert.Contains("Age not available", errorMessage);
-        Assert.Contains("Occupation unknown", errorMessage);
+        Assert.Contains("Name: string - Name not mentioned", errorMessage);
+        Assert.Contains("Age: integer - Age not available", errorMessage);
+        Assert.Contains("Occupation: string - Occupation unknown", errorMessage);
     }
 
     [Fact]
-    public async Task TryFullExtractionAsync_EmptyMockResponses_UsesFallback()
+    public async Task ExtractAsync_EmptyMockResponses_UsesFallback()
     {
         // Arrange
         var input = "Some input text.";
@@ -454,7 +449,7 @@ public class DeterministicTests : IntegrationTestBase
         MockDataStructuringModel.WithResponse(new ResultWrapper<string> { Result = "fallback value" });
 
         // Act
-        var result = await TextContextualBridge.TryFullExtractionAsync<string>(input, query);
+        var result = await TextContextualBridge.ExtractAsync<string>(input, query);
 
         // Assert
         Assert.True(result.IsSuccess);

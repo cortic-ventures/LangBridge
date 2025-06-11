@@ -43,15 +43,6 @@ public class MockReasoningModel : IReasoningModel
     }
 
     /// <summary>
-    /// Configures a specific response for an exact prompt match.
-    /// </summary>
-    public MockReasoningModel WithResponse(string prompt, string response)
-    {
-        _responses[prompt] = response;
-        return this;
-    }
-
-    /// <summary>
     /// Configures a response for prompts containing a specific key phrase.
     /// </summary>
     public MockReasoningModel WithResponseForKey(string keyPhrase, string response)
@@ -70,15 +61,6 @@ public class MockReasoningModel : IReasoningModel
         {
             _defaultResponses.Enqueue(response);
         }
-        return this;
-    }
-
-    /// <summary>
-    /// Sets the fallback response when no other response is configured.
-    /// </summary>
-    public MockReasoningModel WithFallbackResponse(string response)
-    {
-        _fallbackResponse = response;
         return this;
     }
 
@@ -154,10 +136,9 @@ public class MockDataStructuringModel : IDataStructuringModel
     /// <summary>
     /// Clears all configured responses.
     /// </summary>
-    public MockDataStructuringModel Reset()
+    public void Reset()
     {
         _responses.Clear();
         _defaultResponse = null;
-        return this;
     }
 }
