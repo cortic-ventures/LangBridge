@@ -58,29 +58,8 @@ internal class DataStructuringModel : IDataStructuringModel
         if (string.IsNullOrWhiteSpace(response.Content))
             return default;
         
-        try
-        {
-            var result = JToken.Parse(response.GetText()).ToObject<T>();
-
-            return result is null ? default : result;
-        }
-        catch (JsonException e)
-        {
-            throw new(
-                $"Schema: {_comprehensiveJsonSchemaGenerator.GenerateComprehensiveSchema<T>()}; Response: {response.GetText()}; Exception: {e.Message + e.StackTrace}");
-            
-        }
-        catch (NotSupportedException e)
-        {
-            throw new(
-                $"Schema: {_comprehensiveJsonSchemaGenerator.GenerateComprehensiveSchema<T>()}; Response: {response.GetText()}; Exception: {e.Message + e.StackTrace}");
-            
-        }
-        catch (Newtonsoft.Json.JsonException e)
-        {
-            throw new(
-                $"Schema: {_comprehensiveJsonSchemaGenerator.GenerateComprehensiveSchema<T>()}; Response: {response.GetText()}; Exception: {e.Message + e.StackTrace}");
-        }
+        var result = JToken.Parse(response.GetText()).ToObject<T>();
+        return result is null ? default : result;
     }
 
     private string GetStructuredOutputPrompt<T>()

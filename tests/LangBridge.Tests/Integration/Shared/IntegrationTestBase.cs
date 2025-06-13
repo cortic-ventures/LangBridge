@@ -1,6 +1,7 @@
 using LangBridge.ContextualBridging;
 using LangBridge.Internal.Abstractions.LanguageModels;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace LangBridge.Tests.Integration.Shared;
 
@@ -22,6 +23,9 @@ public abstract class IntegrationTestBase : IDisposable
 
         // Setup dependency injection
         var services = new ServiceCollection();
+        
+        // Register logging
+        services.AddLogging(builder => builder.AddConsole().SetMinimumLevel(LogLevel.Debug));
         
         // Register mocks
         services.AddSingleton<IReasoningModel>(MockReasoningModel);

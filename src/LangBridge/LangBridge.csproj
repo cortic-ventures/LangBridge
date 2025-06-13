@@ -14,9 +14,9 @@
     <Authors>Cortic Ventures</Authors>
     <Company>Cortic Ventures</Company>
     <Product>LangBridge</Product>
-    <Description>A C# library for extracting structured data from unstructured text using LLMs. Provides atomic operations with Result&lt;T&gt; pattern, multi-provider support (OpenAI, Ollama, Azure), and type-safe extraction APIs.</Description>
-    <Summary>Extract structured data from unstructured text using LLMs with type safety and atomic operations.</Summary>
-    <PackageTags>llm;ai;semantic-kernel;openai;azure;ollama;data-extraction;nlp;text-processing</PackageTags>
+    <Description>A lightweight C# library for extracting structured data from unstructured text using LLMs. Provides single-method simplicity, atomic operations with Result&lt;T&gt; pattern, contextual queries, and dual-model architecture. A focused alternative to TypeChat.NET for straightforward data extraction scenarios.</Description>
+    <Summary>Lightweight LLM data extraction with single-method simplicity and atomic operations. Alternative to TypeChat.NET for focused extraction scenarios.</Summary>
+    <PackageTags>llm;ai;data-extraction;nlp;text-processing;openai;azure;ollama;typechat;semantic-kernel;structured-data;result-pattern</PackageTags>
     <RepositoryUrl>https://github.com/cortic-ventures/LangBridge</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
@@ -54,6 +54,7 @@
     
     <!-- Only add packages that we explicitly need and that SK doesn't bring in -->
     <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="9.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Logging" Version="9.0.0" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
     <PackageReference Include="CSharpFunctionalExtensions" Version="2.40.3" />
   </ItemGroup>

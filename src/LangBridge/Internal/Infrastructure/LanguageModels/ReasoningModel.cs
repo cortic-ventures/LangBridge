@@ -1,5 +1,4 @@
 using Microsoft.Extensions.DependencyInjection;
-
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.ChatCompletion;
 using LangBridge.Internal.Abstractions.LanguageModels;
@@ -13,7 +12,8 @@ internal class ReasoningModel : IReasoningModel
 {
     private readonly IChatCompletionService _reasoningChatCompletionService;
     
-    public ReasoningModel([FromKeyedServices(nameof(LanguageModelPurposeType.Reasoning))] IChatCompletionService reasoningChatCompletionService)
+    public ReasoningModel(
+        [FromKeyedServices(nameof(LanguageModelPurposeType.Reasoning))] IChatCompletionService reasoningChatCompletionService)
     {
         _reasoningChatCompletionService = reasoningChatCompletionService;
     }

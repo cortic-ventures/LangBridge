@@ -8,9 +8,9 @@ using LangBridge.Internal.Infrastructure.LanguageModels;
 using LangBridge.Internal.Infrastructure.Processing;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.SemanticKernel;
-using OllamaSharp;
 using OpenAI;
 
 namespace LangBridge.Extensions;
@@ -38,12 +38,14 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IValidateOptions<LangBridgeOptions>>(
             new ValidateLangBridgeOptions());
 
+        // Add logging services
+        services.AddLogging();
+ 
         // Register core services
         services.AddScoped<IReasoningModel, ReasoningModel>();
         services.AddScoped<IDataStructuringModel, DataStructuringModel>();
         services.AddScoped<ITextContextualBridge, TextContextualBridge>();
         services.AddScoped<IComprehensiveJsonSchemaGenerator, ComprehensiveJsonSchemaGenerator>();
-        
         RegisterLanguageModels(services, configuration.GetSection(LangBridgeOptions.SectionName));
         return services;
     }

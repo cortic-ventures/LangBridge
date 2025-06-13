@@ -8,6 +8,44 @@ LangBridge is a C# library for extracting structured data from unstructured text
 
 **Why we built it:** Working with raw LLM APIs for data extraction involves a lot of repetitive work—prompt engineering, JSON parsing, error handling, type validation. LangBridge handles these concerns so you can focus on your business logic.
 
+## Installation
+
+```bash
+dotnet add package LangBridge
+```
+
+> **Note:** If you encounter the error `CS9057: The analyzer assembly references version '4.12.0.0' of the compiler`, add this to your project file:
+> ```xml
+> <PackageReference Include="Microsoft.Net.Compilers.Toolset" Version="4.12.0">
+>   <PrivateAssets>all</PrivateAssets>
+>   <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+> </PackageReference>
+> ```
+
+## Relationship to TypeChat.NET
+
+LangBridge shares similar goals with Microsoft's [TypeChat.NET](https://github.com/microsoft/typechat.net) - both libraries use LLMs to extract structured data with strong typing. However, LangBridge takes a **lighter, more focused approach**:
+
+**LangBridge's differentiators:**
+- **Single-method simplicity**: One `ExtractAsync<T>()` call vs TypeChat's multi-step translator pattern
+- **Contextual queries**: Same type, different extraction contexts (e.g., "billing customer" vs "support customer")  
+- **Dual-model architecture**: Use different models for reasoning vs data structuring (e.g., GPT-4 for analysis, GPT-4o-mini for JSON generation)
+- **Atomic operations**: Complete success or detailed failure - no partial states or repair cycles
+- **Streamlined DI integration**: Built for modern .NET dependency injection patterns
+- **Result<T> pattern**: Functional error handling with business-friendly messages
+
+**Choose LangBridge if you want:**
+- A simpler API for straightforward data extraction scenarios
+- Cost optimization through strategic model selection
+- Contextual extraction control without schema variations
+- Minimal setup and configuration overhead
+
+**Choose TypeChat.NET if you need:**
+- JSON program generation and workflow orchestration
+- Multi-language support (TypeScript, Python, C#)
+- Complex validation and repair cycles
+- Semantic Kernel integration for AI agents
+
 ## Features
 
 - **Atomic operations**: Extractions either succeed completely or fail with detailed explanations
@@ -17,11 +55,59 @@ LangBridge is a C# library for extracting structured data from unstructured text
 - **Production patterns**: Built-in Result<T> error handling, timeouts, and configuration management
 - **Developer control**: Fine-tune extractions through Description attributes and custom queries
 
-## Example
+## Configuration
+
+Add to your `appsettings.json`:
+
+```json
+{
+  "LangBridge": {
+    "Models": [
+      {
+        "Purpose": "Reasoning",
+        "Provider": "OpenAI",
+        "ModelName": "gpt-4o",
+        "ApiKey": "your-openai-api-key",
+        "Endpoint": "https://api.openai.com/v1"
+      },
+      {
+        "Purpose": "Tooling",
+        "Provider": "OpenAI",
+        "ModelName": "gpt-4o-mini",
+        "ApiKey": "your-openai-api-key",
+        "Endpoint": "https://api.openai.com/v1"
+      }
+    ]
+  }
+}
+```
+
+**Supported Providers**: OpenAI, Azure OpenAI, Ollama (local), Groq, OpenRouter. See [examples/](examples/) for provider-specific configurations.
+
+## Architecture
+
+LangBridge uses a clean architecture with clear separation between public API and internal implementation:
+
+- **Public API**: Simple, focused interfaces for text extraction
+- **Internal Infrastructure**: Encapsulated LLM interactions and processing logic
+- **Type System**: Advanced reflection utilities for deep property analysis
+- **Result Pattern**: Functional error handling without exceptions
+
+## Basic Usage
 
 ```csharp
+using LangBridge.ContextualBridging;
+using LangBridge.Extensions;
+using CSharpFunctionalExtensions;
+using Microsoft.Extensions.Configuration;
+
+// Configure services with IConfiguration
+services.AddLangBridge(configuration);
+
+var bridge = serviceProvider.GetRequiredService<ITextContextualBridge>();
+
 // Extract structured data with a single call
-var result = await contextualBridge.ExtractAsync<CustomerFeedback>(
+var result = await bridge.ExtractAsync<CustomerFeedback>(
     "The product keeps crashing and I've lost hours of work. This is unacceptable!",
     "Extract customer feedback details");
 
@@ -61,38 +147,40 @@ Tailor the extraction context for your specific use case:
 
 ```csharp
 // General extraction
-await contextualBridge.ExtractAsync<Customer>(text, "Extract customer information");
+await bridge.ExtractAsync<Customer>(text, "Extract customer information");
 
 // Domain-specific extraction
-await contextualBridge.ExtractAsync<Customer>(text, "Extract customer data from this support ticket");
+await bridge.ExtractAsync<Customer>(text, "Extract customer data from this support ticket");
 
 // Context-aware extraction
-await contextualBridge.ExtractAsync<Customer>(text, "Extract billing customer details for invoice processing");
+await bridge.ExtractAsync<Customer>(text, "Extract billing customer details for invoice processing");
 ```
 
 **Why this matters**: You maintain full control over the extraction logic while LangBridge handles the technical complexity. No black-box magic—just clear, configurable instructions that you can tune for your domain.
 
-## Quick Start
-
-### Installation
-
-```bash
-dotnet add package LangBridge
-```
-
-### Basic Usage
+## Error Handling
 
 ```csharp
-using LangcontextualBridge.ContextualBridging;
-using LangcontextualBridge.Extensions;
-using CSharpFunctionalExtensions;
-using Microsoft.Extensions.Configuration;
+var result = await bridge.ExtractAsync<Order>(orderEmail, "Extract order details");
 
-// Configure services with IConfiguration
-services.AddLangBridge(configuration);
+result.Match(
+    onSuccess: order => ProcessOrder(order),
+    onFailure: error => _logger.LogWarning("Extraction failed: {Error}", error)
+);
 
-var bridge = serviceProvider.GetRequiredService<ITextContextualBridge>();
+// Or handle failures explicitly
+if (result.IsFailure)
+{
+    Console.WriteLine($"Failed to extract order: {result.Error}");
+    // Handle the failure case - maybe retry, use defaults, or alert user
+}
+```
 
+## Examples
+
+### Simple Type Extraction
+
+```csharp
 // Extract complex business objects
 public record CustomerFeedback(
     string Sentiment,
@@ -100,7 +188,7 @@ public record CustomerFeedback(
     bool RequiresFollowUp,
     int SeverityScore);
 
-var feedbackResult = await contextualBridge.ExtractAsync<CustomerFeedback>(
+var feedbackResult = await bridge.ExtractAsync<CustomerFeedback>(
     "The product keeps crashing and I've lost hours of work. This is unacceptable!",
     "Extract customer feedback details");
 
@@ -113,7 +201,7 @@ if (feedbackResult.IsSuccess)
 }
 
 // Extract simple types
-var cancellationResult = await contextualBridge.ExtractAsync<bool>(
+var cancellationResult = await bridge.ExtractAsync<bool>(
     "I'm not happy with the service and want to cancel immediately.",
     "Did the user request cancellation?");
 
@@ -134,7 +222,7 @@ using System.ComponentModel;
 public async Task ProcessSupportEmail(string emailContent)
 {
     // Stage 1: Extract basic ticket information
-    var ticketResult = await contextualBridge.ExtractAsync<SupportTicket>(
+    var ticketResult = await bridge.ExtractAsync<SupportTicket>(
         emailContent, 
         "Extract support ticket information");
     
@@ -147,7 +235,7 @@ public async Task ProcessSupportEmail(string emailContent)
     var ticket = ticketResult.Value;
     
     // Stage 2: Analyze customer sentiment and urgency
-    var sentimentResult = await contextualBridge.ExtractAsync<SentimentAnalysis>(
+    var sentimentResult = await bridge.ExtractAsync<SentimentAnalysis>(
         emailContent,
         "Analyze customer sentiment, frustration level, and urgency indicators");
     
@@ -155,7 +243,7 @@ public async Task ProcessSupportEmail(string emailContent)
     TechnicalDetails? techDetails = null;
     if (ticket.Category == "Technical")
     {
-        var techResult = await contextualBridge.ExtractAsync<TechnicalDetails>(
+        var techResult = await bridge.ExtractAsync<TechnicalDetails>(
             emailContent,
             "Extract technical problem details, error messages, and steps to reproduce");
             
@@ -172,7 +260,7 @@ public async Task ProcessSupportEmail(string emailContent)
         Technical Issue: {techDetails?.ProblemType ?? "N/A"}
         """;
         
-    var strategyResult = await contextualBridge.ExtractAsync<ResolutionStrategy>(
+    var strategyResult = await bridge.ExtractAsync<ResolutionStrategy>(
         resolutionInput,
         "Determine the best resolution approach and required resources");
     
@@ -235,66 +323,6 @@ public record ResolutionStrategy(
     string ResponseTone);
 ```
 
-### Error Handling
-
-```csharp
-var result = await contextualBridge.ExtractAsync<Order>(orderEmail, "Extract order details");
-
-result.Match(
-    onSuccess: order => ProcessOrder(order),
-    onFailure: error => _logger.LogWarning("Extraction failed: {Error}", error)
-);
-
-// Or handle failures explicitly
-if (result.IsFailure)
-{
-    Console.WriteLine($"Failed to extract order: {result.Error}");
-    // Handle the failure case - maybe retry, use defaults, or alert user
-}
-```
-
-## Architecture
-
-LangBridge uses a clean architecture with clear separation between public API and internal implementation:
-
-- **Public API**: Simple, focused interfaces for text extraction
-- **Internal Infrastructure**: Encapsulated LLM interactions and processing logic
-- **Type System**: Advanced reflection utilities for deep property analysis
-- **Result Pattern**: Functional error handling without exceptions
-
-## Configuration
-
-Add to your `appsettings.json`:
-
-```json
-{
-  "LangBridge": {
-    "Models": [
-      {
-        "Purpose": "Reasoning",
-        "Provider": "OpenAI",
-        "ModelName": "gpt-4o",
-        "ApiKey": "your-openai-api-key",
-        "Endpoint": "https://api.openai.com/v1"
-      },
-      {
-        "Purpose": "Tooling",
-        "Provider": "OpenAI",
-        "ModelName": "gpt-4o-mini",
-        "ApiKey": "your-openai-api-key",
-        "Endpoint": "https://api.openai.com/v1"
-      }
-    ]
-  }
-}
-```
-
-**Supported Providers**: OpenAI, Azure OpenAI, Ollama (local), Groq, OpenRouter. See [examples/](examples/) for provider-specific configurations.
-
-**Coming Soon**: Multiple bridge configurations (fast vs powerful models) with keyed services support.
-
-## Advanced Features
-
 ### Complex Document Processing
 
 LangBridge excels at extracting sophisticated business data from unstructured documents:
@@ -329,7 +357,7 @@ public record Party(
 
 // Extract from complex legal document
 var contractText = File.ReadAllText("service-agreement.txt");
-var analysisResult = await contextualBridge.ExtractAsync<ContractAnalysis>(
+var analysisResult = await bridge.ExtractAsync<ContractAnalysis>(
     contractText, 
     "Analyze this contract and extract key business terms and parties");
 
@@ -354,17 +382,6 @@ public class Node
     public Node Next { get; set; } // Circular reference!
 }
 ```
-
-## Current Status
-
-### v0.0.1 (Pre-Alpha)
-- ✅ Core `ExtractAsync<T>()` API with configurable extraction modes
-- ✅ Support for simple and complex types with deep property extraction
-- ✅ Atomic operations using `Result<T>` pattern with detailed error reporting
-- ✅ Multi-provider LLM support (OpenAI, Ollama, Azure OpenAI, Groq, OpenRouter)
-- ✅ TypeSystem with advanced reflection utilities and circular reference detection
-- ✅ Comprehensive testing framework (185 tests including complex showcase scenarios)
-- ✅ Production-ready architecture with clean separation of concerns
 
 ## Roadmap
 
