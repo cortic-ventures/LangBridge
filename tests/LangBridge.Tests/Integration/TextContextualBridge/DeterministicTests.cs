@@ -65,7 +65,7 @@ public class DeterministicTests : IntegrationTestBase
 
         // Assert
         Assert.True(result.IsFailure);
-        Assert.Equal("Failed to structure extracted data", result.Error);
+        Assert.Equal("The information extraction service is temporarily unavailable.", result.Error);
     }
 
     [Theory]
@@ -290,7 +290,7 @@ public class DeterministicTests : IntegrationTestBase
         // Assert - Currently TextContextualBridge treats null Result as failure
         // This is the current implementation behavior
         Assert.True(result.IsFailure);
-        Assert.Equal("Failed to structure extracted data", result.Error);
+        Assert.Equal("The information extraction service is temporarily unavailable.", result.Error);
     }
 
     [Fact]
@@ -329,7 +329,7 @@ public class DeterministicTests : IntegrationTestBase
 
         // Assert
         Assert.True(result.IsFailure);
-        Assert.Equal("Failed to structure extracted data", result.Error);
+        Assert.Equal("The information extraction service is temporarily unavailable.", result.Error);
     }
 
     [Fact]
@@ -348,7 +348,7 @@ public class DeterministicTests : IntegrationTestBase
 
         // Assert
         Assert.True(result.IsFailure);
-        Assert.Equal("Failed to structure extracted data", result.Error);
+        Assert.Equal("The information extraction service is temporarily unavailable.", result.Error);
     }
 
     [Fact]

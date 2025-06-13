@@ -11,11 +11,18 @@ public class MockReasoningModel : IReasoningModel
     private readonly Dictionary<string, string> _responses = new();
     private readonly Queue<string> _defaultResponses = new();
     private string _fallbackResponse = "YES: Information available";
+    private Exception? _exceptionToThrow;
 
     public Task<string> ReasonAsync(string prompt, string systemInstructions, CancellationToken cancellationToken = default)
     {
         // Check cancellation before processing
         cancellationToken.ThrowIfCancellationRequested();
+
+        // Throw configured exception if set
+        if (_exceptionToThrow != null)
+        {
+            throw _exceptionToThrow;
+        }
 
         // Check for exact prompt match first
         if (_responses.TryGetValue(prompt, out var response))
@@ -65,6 +72,15 @@ public class MockReasoningModel : IReasoningModel
     }
 
     /// <summary>
+    /// Configures the model to throw an exception on next call.
+    /// </summary>
+    public MockReasoningModel WithException(Exception exception)
+    {
+        _exceptionToThrow = exception;
+        return this;
+    }
+
+    /// <summary>
     /// Clears all configured responses.
     /// </summary>
     public MockReasoningModel Reset()
@@ -72,6 +88,7 @@ public class MockReasoningModel : IReasoningModel
         _responses.Clear();
         _defaultResponses.Clear();
         _fallbackResponse = "YES: Information available";
+        _exceptionToThrow = null;
         return this;
     }
 }
@@ -83,11 +100,18 @@ public class MockDataStructuringModel : IDataStructuringModel
 {
     private readonly Dictionary<Type, object?> _responses = new();
     private object? _defaultResponse;
+    private Exception? _exceptionToThrow;
 
     public Task<T?> GenerateStructuredAsync<T>(string prompt, CancellationToken cancellationToken = default)
     {
         // Check cancellation before processing
         cancellationToken.ThrowIfCancellationRequested();
+
+        // Throw configured exception if set
+        if (_exceptionToThrow != null)
+        {
+            throw _exceptionToThrow;
+        }
 
         // Check for type-specific response
         if (_responses.TryGetValue(typeof(T), out var response))
@@ -134,11 +158,21 @@ public class MockDataStructuringModel : IDataStructuringModel
     }
 
     /// <summary>
+    /// Configures the model to throw an exception on next call.
+    /// </summary>
+    public MockDataStructuringModel WithException(Exception exception)
+    {
+        _exceptionToThrow = exception;
+        return this;
+    }
+
+    /// <summary>
     /// Clears all configured responses.
     /// </summary>
     public void Reset()
     {
         _responses.Clear();
         _defaultResponse = null;
+        _exceptionToThrow = null;
     }
 }
