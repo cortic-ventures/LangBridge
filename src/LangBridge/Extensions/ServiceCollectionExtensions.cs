@@ -42,10 +42,10 @@ public static class ServiceCollectionExtensions
         services.AddLogging();
  
         // Register core services
-        services.AddScoped<IReasoningModel, ReasoningModel>();
-        services.AddScoped<IDataStructuringModel, DataStructuringModel>();
-        services.AddScoped<ITextContextualBridge, TextContextualBridge>();
-        services.AddScoped<IComprehensiveJsonSchemaGenerator, ComprehensiveJsonSchemaGenerator>();
+        services.AddTransient<IReasoningModel, ReasoningModel>();
+        services.AddTransient<IDataStructuringModel, DataStructuringModel>();
+        services.AddTransient<ITextContextualBridge, TextContextualBridge>();
+        services.AddTransient<IComprehensiveJsonSchemaGenerator, ComprehensiveJsonSchemaGenerator>();
         RegisterLanguageModels(services, configuration.GetSection(LangBridgeOptions.SectionName));
         return services;
     }

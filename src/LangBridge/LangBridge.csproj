@@ -7,10 +7,12 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <!-- Disable OllamaSharp source generators temporarily -->
     <RunAnalyzersDuringBuild>false</RunAnalyzersDuringBuild>
+    <!-- Allow package downgrade temporarily -->
+    <NoWarn>NU1605</NoWarn>
     
     <!-- NuGet Package metadata -->
     <PackageId>LangBridge</PackageId>
-    <Version>0.1.0-alpha</Version>
+    <Version>0.2.0-alpha</Version>
     <Authors>Cortic Ventures</Authors>
     <Company>Cortic Ventures</Company>
     <Product>LangBridge</Product>
@@ -42,21 +44,22 @@
     <None Include="../../README.md" Pack="true" PackagePath="\" />
   </ItemGroup>
 
+
   <ItemGroup>
     <!-- Semantic Kernel -->
     <PackageReference Include="Microsoft.Net.Compilers.Toolset" Version="4.12.0">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="Microsoft.SemanticKernel" Version="1.56.0" />
-    <PackageReference Include="Microsoft.SemanticKernel.Connectors.Ollama" Version="1.56.0-alpha" />
-    <PackageReference Include="Microsoft.SemanticKernel.Connectors.OpenAI" Version="1.56.0" />
-    
+    <PackageReference Include="Microsoft.SemanticKernel" Version="1.63.0" />
+    <PackageReference Include="Microsoft.SemanticKernel.Connectors.Ollama" Version="1.63.0-alpha" />
+    <PackageReference Include="Microsoft.SemanticKernel.Connectors.OpenAI" Version="1.63.0" />
+
     <!-- Only add packages that we explicitly need and that SK doesn't bring in -->
-    <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="9.0.0" />
-    <PackageReference Include="Microsoft.Extensions.Logging" Version="9.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="8.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Logging" Version="8.0.0" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
-    <PackageReference Include="CSharpFunctionalExtensions" Version="2.40.3" />
+    <PackageReference Include="CSharpFunctionalExtensions" Version="3.6.0" />
   </ItemGroup>
 
 </Project>
